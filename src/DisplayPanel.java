@@ -80,9 +80,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         if(gameOver) {
             g.setFont(new Font("Arial", Font.BOLD, 32));
             if(score >= 10) {
-                g.drawString("GAME OVER, YOU WIN!", 350, 240);
+                g.drawString("YOU WIN!", 350, 240);
             } else {
-                g.drawString("GAME OVER, YOU LOSE :(", 350, 240);
+                g.drawString("GAME OVER, YOU LOSE. :(", 350, 240);
             }
         } else {
             g.drawImage(mario, marioX, marioY, null);
@@ -136,23 +136,23 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         if(keyCode == KeyEvent.VK_A) {
             try {
                 mario = ImageIO.read(new File("src/marioleft.png"));
-            } catch (IOException error) {}
+            } catch(IOException error) {}
         }
         if(keyCode == KeyEvent.VK_D) {
             try {
                 mario = ImageIO.read(new File("src/marioright.png"));
-            } catch (IOException error) {}
+            } catch(IOException error) {}
         }
 
         if(keyCode == KeyEvent.VK_LEFT) {
             try {
                 luigi = ImageIO.read(new File("src/luigileft.png"));
-            } catch (IOException error) {}
+            } catch(IOException error) {}
         }
         if(keyCode == KeyEvent.VK_RIGHT) {
             try {
                 luigi = ImageIO.read(new File("src/luigiright.png"));
-            } catch (IOException error) {}
+            } catch(IOException error) {}
         }
     }
 
