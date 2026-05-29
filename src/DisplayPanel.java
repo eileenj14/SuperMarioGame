@@ -1,14 +1,13 @@
 import javax.swing.*;
+import java.awt.*;
+
+import java.util.ArrayList;
 
 import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.awt.Graphics;
-import java.awt.Font;
-import java.awt.Color;
-import java.awt.Rectangle;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -30,7 +29,10 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private BufferedImage mario;
     private BufferedImage luigi;
     private BufferedImage goomba;
+    private BufferedImage coin;
     private boolean[] pressedKeys;
+    private ArrayList<Point> coins;
+    private boolean gameOver;
     private Timer timer;
 
     public DisplayPanel() {
@@ -40,9 +42,11 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         marioY = 435;
         luigiX = 850;
         luigiY = 435;
-        goombaX = -50;
-        goombaY = 430;
+        goombaX = -100;
+        goombaY = 465;
         pressedKeys = new boolean[128];
+        coins = new ArrayList<>();
+        gameOver = false;
         timer = new Timer(10, this);
         try {
             background = ImageIO.read(new File("src/background.png"));
@@ -55,6 +59,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         } catch(IOException e) {}
         try {
             goomba = ImageIO.read(new File("src/goomba.png"));
+        } catch(IOException e) {}
+        try {
+            coin = ImageIO.read(new File("src/coin.png"));
         } catch(IOException e) {}
 
         addMouseListener(this);
@@ -69,9 +76,23 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         super.paintComponent(g);
 
         g.drawImage(background, 0, 0, null);
-        g.drawImage(mario, marioX, marioY, null);
-        g.drawImage(luigi, luigiX, luigiY, null);
-        g.drawImage(goomba, (int) goombaX, goombaY, null);
+
+        if(gameOver) {
+            g.setFont(new Font("Arial", Font.BOLD, 32));
+            if(score >= 10) {
+                g.drawString("GAME OVER, YOU WIN!", 350, 240);
+            } else {
+                g.drawString("GAME OVER, YOU LOSE :(", 350, 240);
+            }
+        } else {
+            g.drawImage(mario, marioX, marioY, null);
+            g.drawImage(luigi, luigiX, luigiY, null);
+            g.drawImage(goomba, (int) goombaX, goombaY, null);
+        }
+
+        for(Point c : coins) {
+            g.drawImage(coin, c.x, c.y, null);
+        }
 
         g.setFont(new Font("Arial", Font.BOLD, 16));
         if(scoreColor) g.setColor(Color.YELLOW);
@@ -89,6 +110,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     public void mouseReleased(MouseEvent e) {
         if(e.getButton() == MouseEvent.BUTTON1) {
             scoreColor = !scoreColor;
+            Point clickLocation = e.getPoint();
+            coins.add(clickLocation);
         }
 
         if(e.getButton() == MouseEvent.BUTTON3) {
@@ -140,29 +163,29 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     private void moveMarioAndLuigi() {
-        if (pressedKeys[KeyEvent.VK_A]) {
+        if(pressedKeys[KeyEvent.VK_A]) {
             if(marioX - 5 >= 0) marioX -= 5;
         }
-        if (pressedKeys[KeyEvent.VK_D]) {
+        if(pressedKeys[KeyEvent.VK_D]) {
             if(marioX + 5 <= 900) marioX += 5;
         }
-        if (pressedKeys[KeyEvent.VK_W]) {
+        if(pressedKeys[KeyEvent.VK_W]) {
             if(marioY - 5 >= 0) marioY -= 5;
         }
-        if (pressedKeys[KeyEvent.VK_S]) {
+        if(pressedKeys[KeyEvent.VK_S]) {
             if(marioY + 5 <= 435) marioY += 5;
         }
 
-        if (pressedKeys[KeyEvent.VK_LEFT]) {
+        if(pressedKeys[KeyEvent.VK_LEFT]) {
             if(luigiX - 5 >= 0) luigiX -= 5;
         }
-        if (pressedKeys[KeyEvent.VK_RIGHT]) {
+        if(pressedKeys[KeyEvent.VK_RIGHT]) {
             if(luigiX + 5 <= 905) luigiX += 5;
         }
-        if (pressedKeys[KeyEvent.VK_UP]) {
+        if(pressedKeys[KeyEvent.VK_UP]) {
             if(luigiY - 5 >= 0) luigiY -= 5;
         }
-        if (pressedKeys[KeyEvent.VK_DOWN]) {
+        if(pressedKeys[KeyEvent.VK_DOWN]) {
             if(luigiY + 5 <= 435) luigiY += 5;
         }
     }
@@ -193,10 +216,61 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         return rect;
     }
 
+    private Rectangle coinRectangle(Point point) {
+        int imageHeight = coin.getHeight();
+        int imageWidth = coin.getWidth();
+        Rectangle rect = new Rectangle(point.x, point.y, imageWidth, imageHeight);
+        return rect;
+    }
+
+    private boolean checkForMarioGoombaCollision() {
+        Rectangle marioRect = marioRectangle();
+        Rectangle goombaRect = goombaRectangle();
+        return marioRect.intersects(goombaRect);
+    }
+
+    private boolean checkForLuigiGoombaCollision() {
+        Rectangle luigiRect = luigiRectangle();
+        Rectangle goombaRect = goombaRectangle();
+        return luigiRect.intersects(goombaRect);
+    }
+
+    private void checkForMarioCoinCollision() {
+        Rectangle marioRect = marioRectangle();
+        for(int i = 0; i < coins.size(); i++) {
+            Rectangle coinRect = coinRectangle(coins.get(i));
+            if(marioRect.intersects(coinRect)) {
+                score++;
+                coins.remove(i);
+                i--;
+            }
+        }
+    }
+
+    private void checkForLuigiCoinCollision() {
+        Rectangle luigiRect = luigiRectangle();
+        for(int i = 0; i < coins.size(); i++) {
+            Rectangle coinRect = coinRectangle(coins.get(i));
+            if(luigiRect.intersects(coinRect)) {
+                score++;
+                coins.remove(i);
+                i--;
+            }
+        }
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         moveMarioAndLuigi();
         moveGoomba();
+
+        checkForMarioCoinCollision();
+        checkForLuigiCoinCollision();
+
+        if(checkForMarioGoombaCollision() || checkForLuigiGoombaCollision() || score >= 10) {
+            gameOver = true;
+            timer.stop();
+        }
 
         repaint();
     }
